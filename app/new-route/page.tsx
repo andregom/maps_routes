@@ -10,7 +10,6 @@ export function NewRoutePage() {
     const map = useMap(mapContainerRef);
 
     const [directionsResponseData, setdirectionsResponseData] = useState<DirectionsResponseData & { request: any }>();
-    // const [steps, setSteps] = useState<RouteLeg[]>([]);
     let hasANewRouteLoopStarted = false;
 
     async function searchPlaces(event: FormEvent) {
@@ -19,8 +18,8 @@ export function NewRoutePage() {
         const destination = document.querySelector<HTMLInputElement>("input[name=destination_place]")?.value;
 
         const [sourceResponse, destinationResponse] = await Promise.all([
-            fetch(`http://localhost:3000/places?text=${source}`),
-            fetch(`http://localhost:3000/places?text=${destination}`)
+            fetch(`http://localhost:3001/api/places?text=${source}`),
+            fetch(`http://localhost:3001/api/places?text=${destination}`)
         ]);
 
         console.table(sourceResponse);
@@ -51,8 +50,8 @@ export function NewRoutePage() {
             destinationId: destinationPlace.candidates[0].place_id as string
         });
 
-        const directionsResponse = await fetch(`http://localhost:3000/directions?${queryParams.toString()}`);
-
+        const directionsResponse = await fetch(`http://localhost:3001/api/directions?${queryParams.toString()}`);
+        console.log(`http://localhost:3001/api/directions?${queryParams.toString()}`);
         const directionsResponseData: DirectionsResponseData & { request: any } =
             await directionsResponse.json();
         setdirectionsResponseData(directionsResponseData);
@@ -78,7 +77,7 @@ export function NewRoutePage() {
     const sleep = (interval: number) => new Promise(resolve => { setTimeout(resolve, interval) });
 
     async function createRoute() {
-
+        hasANewRouteLoopStarted = true;
         const response = await fetch('http://localhost:3000/routes', {
             method: 'POST',
             headers: {
@@ -92,6 +91,7 @@ export function NewRoutePage() {
         });
 
         const route = await response.json();
+        hasANewRouteLoopStarted = false;
         const { steps } = route.directions.routes[0].legs[0];
 
         while (!hasANewRouteLoopStarted) {
@@ -102,8 +102,8 @@ export function NewRoutePage() {
 
                 console.log(directionsResponseData?.routes[0].legs[0].start_address);
                 console.table(step);
-                let pause = step.distance.value * 10;
-                pause = pause > 900 ? 900 : pause;
+                let pause = step.distance.value;
+                pause = pause > 950 ? 950 : pause;
 
                 await sleep(pause);
                 moveCar(step.start_location);
